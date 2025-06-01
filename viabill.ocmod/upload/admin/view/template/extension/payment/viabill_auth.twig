@@ -1,0 +1,137 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <a href="{{ cancel }}" class="btn btn-light"><i class="fa-solid fa-reply"></i> {{ button_cancel }}</a>
+      </div>
+      <h1>{{ heading_title }}</h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+          <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_warning %}
+      <div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> {{ error_warning }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success alert-dismissible"><i class="fa-solid fa-check-circle"></i> {{ success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endif %}
+    
+    <div class="card">
+      <div class="card-header"><i class="fa-solid fa-credit-card"></i> {{ text_viabill_setup }}</div>
+      <div class="card-body">
+        <div class="alert alert-info"><i class="fa-solid fa-info-circle"></i> {{ text_viabill_account_required }}</div>
+        
+        <ul class="nav nav-tabs" id="auth-tab">
+          <li class="nav-item">
+            <a href="#tab-login" class="nav-link active" onclick="return false;">{{ tab_login }}</a>
+          </li>
+          <li class="nav-item">
+            <a href="#tab-register" class="nav-link" onclick="return false;">{{ tab_register }}</a>
+          </li>
+        </ul>
+        
+        <div class="tab-content">
+          <!-- Login Tab -->
+          <div class="tab-pane active" id="tab-login">
+            <form id="form-login" action="{{ login_action }}" method="post">
+              <input type="hidden" name="user_token" value="{{ user_token }}" />
+              <div class="row mb-3">
+                <label for="input-email" class="col-sm-2 col-form-label">{{ entry_email }}</label>
+                <div class="col-sm-10">
+                  <input type="email" name="email" value="" id="input-email" class="form-control" required />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-password" class="col-sm-2 col-form-label">{{ entry_password }}</label>
+                <div class="col-sm-10">
+                  <input type="password" name="password" value="" id="input-password" class="form-control" required />
+                </div>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">{{ button_login }}</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Register Tab -->
+          <div class="tab-pane" id="tab-register">
+            <form id="form-register" action="{{ register_action }}" method="post">
+              <input type="hidden" name="user_token" value="{{ user_token }}" />
+              <div class="row mb-3">
+                <label for="input-register-email" class="col-sm-2 col-form-label">{{ entry_email }}</label>
+                <div class="col-sm-10">
+                  <input type="email" name="email" value="{{ store_email }}" id="input-register-email" class="form-control" required />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-name" class="col-sm-2 col-form-label">{{ entry_name }}</label>
+                <div class="col-sm-10">
+                  <input type="text" name="name" value="{{ store_name }}" id="input-name" class="form-control" required />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-url" class="col-sm-2 col-form-label">{{ entry_url }}</label>
+                <div class="col-sm-10">
+                  <input type="url" name="url" value="{{ store_url }}" id="input-url" class="form-control" required />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-country" class="col-sm-2 col-form-label">{{ entry_country }}</label>
+                <div class="col-sm-10">
+                  <select name="country" id="input-country" class="form-select" required>
+                    <option value="">{{ text_select }}</option>
+                    {% for country in countries %}
+                      <option value="{{ country.iso_code_2 }}">{{ country.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-tax-id" class="col-sm-2 col-form-label">{{ entry_tax_id }}</label>
+                <div class="col-sm-10">
+                  <input type="text" name="tax_id" value="" id="input-tax-id" class="form-control" />
+                  <div class="form-text">{{ help_tax_id }}</div>
+                </div>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">{{ button_register }}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    // Handle tab switching without page reload
+    $('.nav-link').on('click', function(e) {
+        e.preventDefault();
+        
+        // Remove active class from all tabs and content
+        $('.nav-link').removeClass('active');
+        $('.tab-pane').removeClass('active');
+        
+        // Add active class to clicked tab
+        $(this).addClass('active');
+        
+        // Show corresponding content
+        var target = $(this).attr('href');
+        $(target).addClass('active');
+    });        
+});
+</script>
+
+{{ footer }}
+

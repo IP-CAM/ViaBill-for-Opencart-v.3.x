@@ -1,0 +1,73 @@
+<div class="card">
+  <div class="card-header">
+    <i class="fa-solid fa-money-check"></i> ViaBill Transaction Management
+  </div>
+  <div class="card-body">
+    <!-- Transaction Details Table -->
+    <table class="table table-bordered">
+      <tr>
+        <th>Transaction ID</th>
+        <td>{{ via_transaction }}</td>
+      </tr>
+      <tr>
+        <th>Order Total</th>
+        <td>{{ order_total | number_format(2) }}</td>
+      </tr>
+      <tr>
+        <th>Captured Amount</th>
+        <td>{{ captured_amount | number_format(2) }}</td>
+      </tr>
+      <tr>
+        <th>Refunded Amount</th>
+        <td>{{ refunded_amount | number_format(2) }}</td>
+      </tr>
+      <tr>
+        <th>Remaining to Capture</th>
+        <td>{{ remaining_capture | number_format(2) }}</td>
+      </tr>
+      <tr>
+        <th>Remaining to Refund</th>
+        <td>{{ remaining_refund | number_format(2) }}</td>
+      </tr>
+    </table>
+
+    <!-- Capture Payment Section -->
+    <h4>Capture Payment</h4>
+    <form action="{{ capture_url }}" method="post" class="mb-3">
+      <input type="hidden" name="order_id" value="{{ order_id }}">
+      <div class="mb-3">
+        <label for="capture_amount" class="form-label">
+          Capture Amount (max: {{ remaining_capture | number_format(2) }})
+        </label>
+        <input type="number" name="capture_amount" id="capture_amount" class="form-control" 
+               step="0.01" min="0" max="{{ remaining_capture }}" required>
+        <div class="form-text">Enter the amount to capture (enter the full remaining amount or a partial value).</div>
+      </div>
+      <button type="submit" class="btn btn-success">Capture Payment</button>
+    </form>
+
+    <!-- Refund Payment Section -->
+    <h4>Refund Payment</h4>
+    <form action="{{ refund_url }}" method="post" class="mb-3">
+      <input type="hidden" name="order_id" value="{{ order_id }}">
+      <div class="mb-3">
+        <label for="refund_amount" class="form-label">
+          Refund Amount (max: {{ remaining_refund | number_format(2) }})
+        </label>
+        <input type="number" name="refund_amount" id="refund_amount" class="form-control" 
+               step="0.01" min="0" max="{{ remaining_refund }}" required>
+        <div class="form-text">Enter the refund amount. Partial refunds are allowed.</div>
+      </div>
+      <button type="submit" class="btn btn-warning">Refund Payment</button>
+    </form>
+
+    <!-- Void Payment Section -->
+    <h4>Void Payment</h4>
+    <form action="{{ void_url }}" method="post">
+      <input type="hidden" name="order_id" value="{{ order_id }}">
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to void this payment?');">
+        Void Payment
+      </button>
+    </form>
+  </div>
+</div>

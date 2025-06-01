@@ -1,0 +1,666 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <button type="submit" form="form-viabill" data-bs-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary">
+          <i class="fa fa-save"></i> {{ button_save }}
+        </button>
+        <a href="{{ cancel }}" data-bs-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-light">
+          <i class="fa fa-reply"></i> {{ button_cancel }}
+        </a>
+      </div>
+      <h1 style="margin-top: 10px;"><i class="fa fa-credit-card text-primary"></i> {{ heading_title }}</h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  
+  <div class="container-fluid">
+    {% if error_warning %}
+      <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-triangle"></i> {{ error_warning }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> {{ success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endif %}
+    
+    <div class="card viabill-admin">
+      <div class="card-header">
+        <h4 class="card-title mb-0"><i class="fa fa-cog"></i> {{ text_edit }}</h4>
+      </div>
+      <div class="card-body">
+
+        <form id="form-viabill" action="{{ save_action }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="user_token" value="{{ user_token }}" />
+          
+          <!-- Enhanced Nav tabs -->
+          <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+              <a href="#tab-general" class="nav-link active" onclick="return false;">
+                <i class="fa fa-cog"></i> {{ tab_general }}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#tab-pricetag" class="nav-link" onclick="return false;">
+                <i class="fa fa-tags"></i> {{ tab_pricetag }}
+              </a>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- ======== General Settings ======== -->
+            <div class="tab-pane show active" id="tab-general">
+
+              <!-- API Configuration Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-key text-primary"></i> API Configuration
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-api-key">
+                      <i class="fa fa-key text-primary"></i> {{ entry_api_key }}
+                    </label>
+                    <div class="col-sm-10">
+                      <div class="input-group">
+                        <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                        <input type="text" name="payment_viabill_api_key" value="{{ payment_viabill_api_key }}" 
+                               id="input-api-key" class="form-control" placeholder="Enter your ViaBill API Key" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-secret-key">
+                      <i class="fa fa-shield text-warning"></i> {{ entry_secret_key }}
+                    </label>
+                    <div class="col-sm-10">
+                      <div class="input-group">
+                        <span class="input-group-text"><i class="fa fa-eye-slash"></i></span>
+                        <input type="password" name="payment_viabill_secret_key" value="{{ payment_viabill_secret_key }}" 
+                               id="input-secret-key" class="form-control" placeholder="Enter your ViaBill Secret Key" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Settings Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-credit-card text-success"></i> Payment Settings
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-test-mode">
+                      <i class="fa fa-flask text-info"></i> {{ entry_test_mode }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_test" id="input-test-mode" class="form-select">
+                        <option value="0" {{ payment_viabill_test ? '' : 'selected' }}>{{ text_disabled }}</option>
+                        <option value="1" {{ payment_viabill_test ? 'selected' : '' }}>{{ text_enabled }}</option>
+                      </select>
+                      {% if payment_viabill_test %}
+                        <div class="alert alert-warning mt-2 mb-0">
+                          <i class="fa fa-exclamation-triangle"></i> 
+                          <strong>Test Mode Active:</strong> This module is currently in test mode. No real transactions will be processed.
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-transaction-mode">
+                      <i class="fa fa-exchange text-primary"></i> {{ entry_transaction_mode }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_transaction_mode" id="input-transaction-mode" class="form-select">
+                        <option value="authorize" {{ payment_viabill_transaction_mode == 'authorize' ? 'selected' : '' }}>
+                          <i class="fa fa-pause"></i> {{ text_authorization }}
+                        </option>
+                        <option value="authorize_capture" {{ payment_viabill_transaction_mode == 'authorize_capture' ? 'selected' : '' }}>
+                          <i class="fa fa-play"></i> {{ text_authorization_capture }}
+                        </option>
+                      </select>
+                      {% if entry_transaction_mode_help %}
+                        <div class="form-text">
+                          <i class="fa fa-info-circle text-info"></i>
+                          {{ entry_transaction_mode_help }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-authorize-order-status">
+                      <i class="fa fa-clock text-warning"></i> {{ entry_authorize_order_status }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_authorize_order_status_id" id="input-authorize-order-status" class="form-select">
+                        {% for status in order_statuses %}
+                          <option value="{{ status.order_status_id }}" {{ status.order_status_id == payment_viabill_authorize_order_status_id ? 'selected' : '' }}>
+                            {{ status.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-capture-order-status">
+                      <i class="fa fa-check-circle text-success"></i> {{ entry_capture_order_status }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_capture_order_status_id" id="input-capture-order-status" class="form-select">
+                        {% for status in order_statuses %}
+                          <option value="{{ status.order_status_id }}" {{ status.order_status_id == payment_viabill_capture_order_status_id ? 'selected' : '' }}>
+                            {{ status.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Module Configuration Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-sliders text-info"></i> Module Configuration
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-status">
+                      <i class="fa fa-power-off"></i> {{ entry_status }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_status" id="input-status" class="form-select">
+                        <option value="1" {{ payment_viabill_status ? 'selected' : '' }}>
+                          <span class="badge bg-success">{{ text_enabled }}</span>
+                        </option>
+                        <option value="0" {{ not payment_viabill_status ? 'selected' : '' }}>
+                          <span class="badge bg-danger">{{ text_disabled }}</span>
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-hide-checkout">
+                      <i class="fa fa-eye-slash text-secondary"></i> {{ entry_hide_checkout }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_hide_checkout" id="input-hide-checkout" class="form-select">
+                        <option value="1" {{ payment_viabill_hide_checkout ? 'selected' : '' }}>{{ text_enabled }}</option>
+                        <option value="0" {{ not payment_viabill_hide_checkout ? 'selected' : '' }}>{{ text_disabled }}</option>
+                      </select>
+                    </div>
+                  </div>                                   
+
+                  <div class="row mb-3">
+                    <label for="input-geo-zone" class="col-sm-2 col-form-label">
+                      <i class="fa fa-globe text-primary"></i> {{ entry_geo_zone }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_geo_zone_id" id="input-geo-zone" class="form-select">
+                        {% for geo_zone in geo_zones %}
+                          {% if geo_zone.geo_zone_id == payment_viabill_geo_zone_id %}
+                            <option value="{{ geo_zone.geo_zone_id }}" selected="selected">{{ geo_zone.name }}</option>
+                          {% else %}
+                            <option value="{{ geo_zone.geo_zone_id }}">{{ geo_zone.name }}</option>
+                          {% endif %}
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-sort-order">
+                      <i class="fa fa-sort-numeric-up text-secondary"></i> {{ entry_sort_order }}
+                    </label>
+                    <div class="col-sm-10">
+                      <input type="number" name="payment_viabill_sort_order" value="{{ payment_viabill_sort_order }}" 
+                             id="input-sort-order" class="form-control" min="0" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+
+            <!-- ======== PriceTag Configuration ======== -->
+            <div class="tab-pane" id="tab-pricetag">
+              
+              <!-- Common PriceTag Settings Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-cogs text-primary"></i> {{ entry_pricetag_common }}
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag">
+                      <i class="fa fa-code text-info"></i> {{ entry_pricetag }}
+                    </label>
+                    <div class="col-sm-10">
+                      <textarea name="payment_viabill_pricetag" rows="5" id="input-pricetag" 
+                                class="form-control" placeholder="Enter ViaBill PriceTag script">{{ payment_viabill_pricetag }}</textarea>
+                      {% if entry_pricetag_help %}
+                        <div class="form-text">
+                          <i class="fa fa-info-circle text-info"></i>
+                          {{ entry_pricetag_help }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-language">
+                      <i class="fa fa-language text-primary"></i> {{ entry_pricetag_language }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_language" id="input-pricetag-language" class="form-select">
+                        <option value="" {{ payment_viabill_pricetag_language == '' ? 'selected' : '' }}>Auto Detect</option>
+                        <option value="DA" {{ payment_viabill_pricetag_language == 'DA' ? 'selected' : '' }}>Danish (DA)</option>
+                        <option value="ES" {{ payment_viabill_pricetag_language == 'ES' ? 'selected' : '' }}>Spanish (ES)</option>
+                        <option value="EN" {{ payment_viabill_pricetag_language == 'EN' ? 'selected' : '' }}>English (EN)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-country">
+                      <i class="fa fa-flag text-success"></i> {{ entry_pricetag_country }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_country" id="input-pricetag-country" class="form-select">
+                        <option value="" {{ payment_viabill_pricetag_country == '' ? 'selected' : '' }}>Auto Detect</option>
+                        <option value="DK" {{ payment_viabill_pricetag_country == 'DK' ? 'selected' : '' }}>Denmark (DK)</option>
+                        <option value="ES" {{ payment_viabill_pricetag_country == 'ES' ? 'selected' : '' }}>Spain (ES)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-currency">
+                      <i class="fa fa-money-bill text-warning"></i> {{ entry_pricetag_currency }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_currency" id="input-pricetag-currency" class="form-select">
+                        <option value="" {{ payment_viabill_pricetag_currency == '' ? 'selected' : '' }}>Auto Detect</option>
+                        <option value="DKK" {{ payment_viabill_pricetag_currency == 'DKK' ? 'selected' : '' }}>Danish Krone (DKK)</option>
+                        <option value="EUR" {{ payment_viabill_pricetag_currency == 'EUR' ? 'selected' : '' }}>Euro (EUR)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-decimal">
+                      <i class="fa fa-decimal text-secondary"></i> {{ entry_pricetag_decimal_separator }}
+                    </label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_decimal_separator" id="input-pricetag-decimal" class="form-select">
+                        <option value="" {{ payment_viabill_pricetag_decimal_separator == '' ? 'selected' : '' }}>Auto Detect</option>
+                        <option value="," {{ payment_viabill_pricetag_decimal_separator == ',' ? 'selected' : '' }}>Comma (,)</option>
+                        <option value="." {{ payment_viabill_pricetag_decimal_separator == '.' ? 'selected' : '' }}>Period (.)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Product Page Settings Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-shopping-bag text-primary"></i> {{ entry_pricetag_product }}
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-dynamic">{{ entry_pricetag_product_dynamic_price }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_product_dynamic_price"
+                            value="{{ payment_viabill_pricetag_product_dynamic_price }}"
+                            id="input-pricetag-product-dynamic" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-trigger">{{ entry_pricetag_product_dynamic_price_trigger }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_product_dynamic_price_trigger"
+                            value="{{ payment_viabill_pricetag_product_dynamic_price_trigger }}"
+                            id="input-pricetag-product-trigger" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-delay">{{ entry_pricetag_product_dynamic_price_trigger_delay }}</label>
+                    <div class="col-sm-10">
+                      <input type="number" name="payment_viabill_pricetag_product_dynamic_price_trigger_delay"
+                            value="{{ payment_viabill_pricetag_product_dynamic_price_trigger_delay }}"
+                            id="input-pricetag-product-delay" class="form-control" min="0" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-selector">{{ entry_pricetag_product_append_selector }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_product_append_selector"
+                            value="{{ payment_viabill_pricetag_product_append_selector }}"
+                            id="input-pricetag-product-selector" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-after">{{ entry_pricetag_product_append_after }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_product_append_after" id="input-pricetag-product-after" class="form-select">
+                        <option value="1" {{ payment_viabill_pricetag_product_append_after ? 'selected' : '' }}>Yes</option>
+                        <option value="0" {{ not payment_viabill_pricetag_product_append_after ? 'selected' : '' }}>No</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-align">{{ entry_pricetag_product_align }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_product_align" id="input-pricetag-product-align" class="form-select">
+                        <option value="default" {{ payment_viabill_pricetag_product_align == 'default' ? 'selected' : '' }}>Default</option>
+                        <option value="center" {{ payment_viabill_pricetag_product_align == 'center' ? 'selected' : '' }}>Center</option>
+                        <option value="right" {{ payment_viabill_pricetag_product_align == 'right' ? 'selected' : '' }}>Right</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-product-width">{{ entry_pricetag_product_width }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_product_width"
+                            value="{{ payment_viabill_pricetag_product_width }}"
+                            id="input-pricetag-product-width" class="form-control" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Cart Page Settings Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-shopping-cart text-success"></i> {{ entry_pricetag_cart }}
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-dynamic">{{ entry_pricetag_cart_dynamic_price }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_cart_dynamic_price"
+                            value="{{ payment_viabill_pricetag_cart_dynamic_price }}"
+                            id="input-pricetag-cart-dynamic" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-trigger">{{ entry_pricetag_cart_dynamic_price_trigger }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_cart_dynamic_price_trigger"
+                            value="{{ payment_viabill_pricetag_cart_dynamic_price_trigger }}"
+                            id="input-pricetag-cart-trigger" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-delay">{{ entry_pricetag_cart_dynamic_price_trigger_delay }}</label>
+                    <div class="col-sm-10">
+                      <input type="number" name="payment_viabill_pricetag_cart_dynamic_price_trigger_delay"
+                            value="{{ payment_viabill_pricetag_cart_dynamic_price_trigger_delay }}"
+                            id="input-pricetag-cart-delay" class="form-control" min="0" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-selector">{{ entry_pricetag_cart_append_selector }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_cart_append_selector"
+                            value="{{ payment_viabill_pricetag_cart_append_selector }}"
+                            id="input-pricetag-cart-selector" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-after">{{ entry_pricetag_cart_append_after }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_cart_append_after" id="input-pricetag-cart-after" class="form-select">
+                        <option value="1" {{ payment_viabill_pricetag_cart_append_after ? 'selected' : '' }}>Yes</option>
+                        <option value="0" {{ not payment_viabill_pricetag_cart_append_after ? 'selected' : '' }}>No</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-align">{{ entry_pricetag_cart_align }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_cart_align" id="input-pricetag-cart-align" class="form-select">
+                        <option value="default" {{ payment_viabill_pricetag_cart_align == 'default' ? 'selected' : '' }}>Default</option>
+                        <option value="center" {{ payment_viabill_pricetag_cart_align == 'center' ? 'selected' : '' }}>Center</option>
+                        <option value="right" {{ payment_viabill_pricetag_cart_align == 'right' ? 'selected' : '' }}>Right</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-cart-width">{{ entry_pricetag_cart_width }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_cart_width"
+                            value="{{ payment_viabill_pricetag_cart_width }}"
+                            id="input-pricetag-cart-width" class="form-control" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Checkout Page Settings Card -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">
+                    <i class="fa fa-credit-card text-warning"></i> {{ entry_pricetag_checkout }}
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-dynamic">{{ entry_pricetag_checkout_dynamic_price }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_checkout_dynamic_price"
+                            value="{{ payment_viabill_pricetag_checkout_dynamic_price }}"
+                            id="input-pricetag-checkout-dynamic" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-trigger">{{ entry_pricetag_checkout_dynamic_price_trigger }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_checkout_dynamic_price_trigger"
+                            value="{{ payment_viabill_pricetag_checkout_dynamic_price_trigger }}"
+                            id="input-pricetag-checkout-trigger" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-delay">{{ entry_pricetag_checkout_dynamic_price_trigger_delay }}</label>
+                    <div class="col-sm-10">
+                      <input type="number" name="payment_viabill_pricetag_checkout_dynamic_price_trigger_delay"
+                            value="{{ payment_viabill_pricetag_checkout_dynamic_price_trigger_delay }}"
+                            id="input-pricetag-checkout-delay" class="form-control" min="0" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-selector">{{ entry_pricetag_checkout_append_selector }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_checkout_append_selector"
+                            value="{{ payment_viabill_pricetag_checkout_append_selector }}"
+                            id="input-pricetag-checkout-selector" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-after">{{ entry_pricetag_checkout_append_after }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_checkout_append_after" id="input-pricetag-checkout-after" class="form-select">
+                        <option value="1" {{ payment_viabill_pricetag_checkout_append_after ? 'selected' : '' }}>Yes</option>
+                        <option value="0" {{ not payment_viabill_pricetag_checkout_append_after ? 'selected' : '' }}>No</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-align">{{ entry_pricetag_checkout_align }}</label>
+                    <div class="col-sm-10">
+                      <select name="payment_viabill_pricetag_checkout_align" id="input-pricetag-checkout-align" class="form-select">
+                        <option value="default" {{ payment_viabill_pricetag_checkout_align == 'default' ? 'selected' : '' }}>Default</option>
+                        <option value="center" {{ payment_viabill_pricetag_checkout_align == 'center' ? 'selected' : '' }}>Center</option>
+                        <option value="right" {{ payment_viabill_pricetag_checkout_align == 'right' ? 'selected' : '' }}>Right</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="input-pricetag-checkout-width">{{ entry_pricetag_checkout_width }}</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="payment_viabill_pricetag_checkout_width"
+                            value="{{ payment_viabill_pricetag_checkout_width }}"
+                            id="input-pricetag-checkout-width" class="form-control" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="text-end mt-4">
+            <button type="submit" form="form-viabill" class="btn btn-primary btn-lg">
+              <i class="fa fa-save"></i> {{ button_save }}
+            </button>
+            <a href="{{ cancel }}" class="btn btn-danger btn-lg">
+              <i class="fa fa-times"></i> {{ button_cancel }}
+            </a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom CSS for ViaBill Admin -->
+<style>
+.viabill-admin {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.viabill-admin .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.viabill-admin .card-header h4,
+.viabill-admin .card-header h5 {
+  color: white;
+}
+
+.viabill-admin .card-header .card-title {
+  padding: 10px;
+}
+
+.viabill-admin .form-control:focus,
+.viabill-admin .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.viabill-admin .nav.nav-tabs { 
+  margin-bottom: 0px; 
+}
+
+.viabill-admin .nav-tabs .nav-link {
+  border: none;
+  background: #f8f9fa;
+  margin-right: 5px;
+  border-radius: 10px 10px 0 0;
+  font-weight: 500;
+}
+
+.viabill-admin .nav-tabs .nav-link.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.viabill-admin .input-group-text {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.viabill-admin .card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 1rem;
+}
+
+.viabill-admin .card .card-header {
+  border-bottom: none;
+}
+
+.viabill-admin .card-body .row { 
+  padding: 10px; 
+}
+
+.viabill-admin .alert {
+  border: none;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.viabill-admin .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.viabill-admin .btn-primary:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: translateY(-1px);
+}
+
+.viabill-admin .form-text {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+</style>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    // Handle tab switching without page reload
+    $('.nav-link').on('click', function(e) {
+        e.preventDefault();
+        
+        // Remove active class from all tabs and content
+        $('.nav-link').removeClass('active');
+        $('.tab-pane').removeClass('active show');
+        
+        // Add active class to clicked tab
+        $(this).addClass('active');
+        
+        // Show corresponding content
+        var target = $(this).attr('href');
+        $(target).addClass('active show');
+    });
+
+    // Add smooth transitions
+    // $('.tab-pane').addClass('fade');
+    
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+});
+</script>
+
+{{ footer }}
