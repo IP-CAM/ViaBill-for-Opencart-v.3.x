@@ -93,5 +93,37 @@ class ModelExtensionPaymentViabill extends Model {
             $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET " . implode(', ', $fields) . " WHERE `order_id` = '" . (int)$order_id . "'");
         }
     }
+
+    private function loadViabillHelpers() {
+        require_once(DIR_SYSTEM . 'library/viabill/viabill_constants.php');
+        require_once(DIR_SYSTEM . 'library/viabill/viabill_services.php');
+        require_once(DIR_SYSTEM . 'library/viabill/viabill_helper.php');
+    }
+
+    /**
+     * Capture a previously authorized ViaBill transaction.
+     * @param array $capture_data The data used for the capture request.     
+     * @return bool success
+     */
+    public function capturePayment($capture_data): array {
+        // Load language class
+        $this->load->language('extension/payment/viabill');
+        
+        // Load helper classes
+        $this->loadViabillHelpers();
+    
+        $registry = $this->registry;
+        ViaBillServices::setRegistry($registry);        
+        
+        // Endpoint for capture
+        $capture_endpoint = ViaBillServices::getApiEndPoint('capture_transaction');        
+        $response = ViaBillHelper::sendApiRequest($capture_endpoint['endpoint'], $capture_data, $capture_endpoint['method']);
+        if ($response['status'] == 'success') {                        
+            return ['success' => true];
+        } else {
+            // Log or handle capture failure
+            return ['success' => false];
+        }
+    }
 }
 ?>

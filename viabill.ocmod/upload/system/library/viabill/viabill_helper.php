@@ -73,7 +73,27 @@ class ViaBillHelper {
    * Get the ViaBill platform (affiliate) for this module.
    */
   public static function getViaBillApiPlatform() {
-    return ViaBillConstants::API_PLATFORM;
+    return ViaBillConstants::AFFILIATE;
+  }
+
+  /**
+     * Verify callback signature from ViaBill
+     * 
+     * @param array $data
+     * @return bool
+     */
+    public function verifyCallbackSignature(array $data): bool {
+      if (!isset($data['signature']) || !isset($data['transaction']) || !isset($data['amount']) || !isset($data['currency'])) {
+          return false;
+      }
+      
+      $api_key = $this->config->get('payment_viabill_api_key');
+      $secret = $this->config->get('payment_viabill_secret');
+      
+      $signature_data = $api_key . $data['transaction'] . $data['amount'] . $data['currency'] . $secret;
+      $calculated_signature = md5($signature_data);
+      
+      return $calculated_signature === $data['signature'];
   }
 
   /**

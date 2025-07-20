@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
     <name>ViaBill Payments</name>
-    <version>1.0.0</version>
-    <author>Your Name</author>
+    <version>1.0.5</version>
+    <author>ViaBill S/A</author>
     <link>https://viabill.com</link>
     <code>viabill_payments</code>
     <description>ViaBill payment integration for OpenCart 3</description>

@@ -213,65 +213,163 @@ class ControllerExtensionPaymentViabill extends Controller {
             $this->response->setOutput(json_encode($json));            
         }
     }
-    
+        
+
     /**
      * Callback endpoint for ViaBill.
      * ViaBill will call this URL to notify of payment status (success, cancel, etc).
      * It should update the order status accordingly.
-     */
+     */    
     public function callback(): void {
-        // Retrieve data from ViaBill (assuming it's a POST callback)
-        $callbackData = $this->request->post;  // or $this->request->get depending on ViaBill implementation
-        // For security, verify the callback (e.g., check md5 or a signature, and apikey/secret)
-        $order_id = $callbackData['order_number'] ?? 0;
-        $transactionId = $callbackData['transaction'] ?? '';
-        $status = strtolower($callbackData['status'] ?? '');  // e.g., 'paid', 'cancelled', 'refunded', 'voided'
-        
+        // Load helper function manually, since this is a callback
+        require_once(DIR_SYSTEM . 'library/viabill/viabill_constants.php');
+		require_once(DIR_SYSTEM . 'library/viabill/viabill_helper.php');
+
+        // Load helper function manually, since this is a callback              
         $this->load->model('checkout/order');        
-        $this->load->model('extension/payment/viabill');   
-        
+        $this->load->language('extension/payment/viabill');
+        $this->load->model('extension/payment/viabill');                
+                      
+        // Retrieve data from ViaBill, using various methods
+		$callbackData = null;
+		
+		// Method 1: Try OpenCart's request object
+		if (!empty($this->request->post)) {
+			$callbackData = $this->request->post;            
+		}
+		// Method 2: Try raw POST data
+		else {                                
+			$rawData = file_get_contents('php://input');
+			
+			if (!empty($rawData)) {              
+				// Try JSON decode
+				$jsonData = json_decode($rawData, true);
+				if (json_last_error() === JSON_ERROR_NONE) {
+					$callbackData = $jsonData;
+				}
+				// Try form-encoded data
+				else {
+					parse_str($rawData, $callbackData);
+				}
+			}
+			// Method 3: Fallback to $_POST
+			else if (!empty($_POST)) {                
+				$callbackData = $_POST;
+			}
+		}
+		
+		if (empty($callbackData)) {			
+			ViaBillHelper::log('Received an callback request with empty data', 'error');
+			return;
+		}
+      
+        $order_id = $callbackData['orderNumber'] ?? 0;
+        $transactionId = $callbackData['transaction'] ?? '';
+        $status = $callbackData['status'] ?? '';  // e.g., 'APPROVED', 'CANCELLED', 'REJECTED'                        
+              
         if ($order_id && $transactionId) {
+            // first of all, verify that this is a valid callback request
+            $amount = $callbackData['amount'];
+            $currency = $callbackData['currency'];
+            $status = $callbackData['status'];
+            $time = $callbackData['time'];
+
+            $callback_signature = $callbackData['signature'];
+
+            $api_key = $this->config->get('payment_viabill_api_key') ?? '';
+            $secret = $this->config->get('payment_viabill_secret_key') ?? '';                        
+
+            $validation_arguments = [
+                $transactionId,
+                $order_id,
+                $amount,
+                $currency,
+                $status,
+                $time,
+                $secret
+            ];
+
+            if (ViaBillConstants::PROTOCOL == '3.0') {                
+                $calculated_signature = md5(implode('#', $validation_arguments));
+            } else {                
+                $calculated_signature = hash('sha256', implode('#', $validation_arguments));
+            }
+
+            if ($callback_signature != $calculated_signature) {                
+                return;
+            }                      
+          
             // Match the callback data with our stored transaction (to ensure it’s valid)
-            $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "viabill_transaction` WHERE order_id = " . (int)$order_id . " AND transaction_id = '" . $this->db->escape($transactionId) . "'");
+            $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "viabill_transaction` WHERE order_id = " . (int)$order_id . " AND transaction_id = '" . $this->db->escape($transactionId) . "'");       
             if ($query->num_rows) {
                 // Determine new order status based on ViaBill status
                 $comment = 'ViaBill: ';
                 $notifyCustomer = true;
                                 
-                if ($status == 'paid' || $status == 'captured' || $status == 'authorized') {
+                if ($status == 'APPROVED') {                                                        
+                    $payment_type = $this->config->get('payment_viabill_transaction_mode');
+
                     // Payment completed (or at least authorized)
                     $comment .= 'Payment successful.';
-                    if ($status == 'authorized' && $this->config->get('payment_viabill_transaction_mode') == 'authorize') {
-                        $comment .= ' (Authorized only, awaiting capture)';
-                        // If authorized-only, you might set a different status, e.g., "Pending Payment"
-                    }
-
                     // Set the new order status
                     $newStatusId = null;
-                    $payment_type = $this->config->get('payment_viabill_transaction_mode');
-                    if ($payment_type == 'authorize') {
+                    if ($payment_type == 'authorize') {                        
+                        $comment .= ' (Authorized only, awaiting capture)';
                         $newStatusId = $this->config->get('payment_viabill_authorize_order_status_id') ?: $this->config->get('config_order_status_id');
-                    } else {  // authorize_capture                       
-                        $newStatusId = $this->config->get('payment_viabill_capture_order_status_id') ?: $this->config->get('config_order_status_id');
-                    }  
+                        // Update OpenCart order history with the determined status and comment
+                        $this->model_checkout_order->addOrderHistory($order_id, $newStatusId, $comment, $notifyCustomer);
+                    } else {                                                                         
+                        $capture_amount = $amount;          
+                                                                  
+                        $capture_data = [
+                            'apikey'      => $api_key,
+                            'secret'      => $secret,
+                            'transaction' => $transactionId,
+                            'amount'      => $amount,
+                            'currency'    => $currency
+                        ];
+                      
+                      	try {
+                            $result = $this->model_extension_payment_viabill->capturePayment($capture_data);
+                        } catch (Exception $e) {
+                            ViaBillHelper::log('Capture payment failed: ' . $e->getMessage(), 'error');
+                            $result = [
+                                'success' => false,
+                                'message' => 'Capture failed: ' . $e->getMessage()
+                            ];
+                        } catch (Error $e) {
+                            ViaBillHelper::log('Fatal error during capture: ' . $e->getMessage(), 'error');
+                            $result = [
+                                'success' => false,
+                                'message' => 'System error during capture: ' . $e->getMessage()
+                            ];
+                        }
+                      
+                        if ($result['success']) {                                 
+                          $this->model_extension_payment_viabill->updateTransactionAmounts($order_id, $capture_amount, null);
+                          $newStatusId = $this->config->get('payment_viabill_capture_order_status_id') ?: $this->config->get('config_order_status_id');
+                          
+                          // Update OpenCart order history with the determined status and comment
+                          // $comment = 'Payment was captured';
+                          $this->model_checkout_order->addOrderHistory($order_id, $newStatusId, $comment, $notifyCustomer);
+                          
+                        } else {
+                          ViaBillHelper::log('Capture was failed:'.$result['message'], 'error');
+                        }
+
+                    }                                        
 
                     // Update transaction table status
-                    $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET status = 'PAID' WHERE order_id = " . (int)$order_id);
-                                                                 
+                    $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET status = 'PAID' WHERE order_id = " . (int)$order_id);                                                                                                       
                     // (Optionally, if auth-only, set notifyCustomer = false to not send final email until capture)
-                } elseif ($status == 'cancelled' || $status == 'canceled') {
+                } elseif ($status == 'CANCELLED') {
                     $newStatusId = $this->getOrderStatusIdByName('Canceled') ?? $this->config->get('config_order_status_id');
-                    $comment .= 'Payment was cancelled or failed.';
+                    $comment .= 'Payment was cancelled.';
                     $notifyCustomer = false;  // No need to notify for cancel in some cases
                     $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET status = 'CANCELLED' WHERE order_id = " . (int)$order_id);
-                } elseif ($status == 'refunded') {
-                    $newStatusId = $this->getOrderStatusIdByName('Refunded') ?? $newStatusId;
-                    $comment .= 'Payment refunded.';
-                    $notifyCustomer = true;
-                    $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET status = 'REFUNDED' WHERE order_id = " . (int)$order_id);
-                } elseif ($status == 'voided') {
+                } elseif ($status == 'REJECTED') {
                     $newStatusId = $this->getOrderStatusIdByName('Canceled') ?? $newStatusId;
-                    $comment .= 'Payment voided (authorization cancelled).';
+                    $comment .= 'Payment was rejected by the ViaBill Gateway or failed.';
                     $notifyCustomer = false;
                     $this->db->query("UPDATE `" . DB_PREFIX . "viabill_transaction` SET status = 'VOIDED' WHERE order_id = " . (int)$order_id);
                 } else {
@@ -280,7 +378,7 @@ class ControllerExtensionPaymentViabill extends Controller {
                 }
                 
                 // Update OpenCart order history with the determined status and comment
-                $this->model_checkout_order->addHistory($order_id, $newStatusId, $comment, $notifyCustomer);
+                $this->model_checkout_order->addOrderHistory($order_id, $newStatusId, $comment, $notifyCustomer);
             }
         }
 
