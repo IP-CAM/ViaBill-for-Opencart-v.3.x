@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
     <name>ViaBill Payments</name>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <author>ViaBill S/A</author>
     <link>https://viabill.com</link>
     <code>viabill_payments</code>

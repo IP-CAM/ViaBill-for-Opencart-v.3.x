@@ -6,7 +6,7 @@
 class ViaBillConstants {
   
   public const PROTOCOL = '3.0';
-  public const AFFILIATE = 'opencart';
+  public const AFFILIATE = 'open_cart';
   public const TRANSACTION_TYPE_AUTHORIZE_ONLY = 'authorize_only';
   public const TRANSACTION_TYPE_AUTHORIZE_CAPTURE = 'authorize_capture';
   public const TEST_MODE_ON = 'true';
